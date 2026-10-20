@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>PulseView | ESP32 Dashboard</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b1020;
+        --panel: #121a2d;
+        --line: #26334b;
+        --muted: #94a3b8;
+        --text: #eef4ff;
+        --cyan: #5eead4;
+        --blue: #7dd3fc;
+        --pink: #fb7185;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(ellipse at top, #152341 0, var(--bg) 55%);
+        color: var(--text);
+        font-family: Inter, system-ui, sans-serif;
+        min-height: 100vh;
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: auto;
+        padding: 28px 20px 48px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 30px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+      }
+      .logo {
+        display: grid;
+        place-items: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 15px;
+        background: #153b43;
+        color: var(--cyan);
+        font-size: 25px;
+      }
+      h1 {
+        font-size: clamp(23px, 4vw, 32px);
+        margin: 0;
+      }
+      .subtitle {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .pill {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        border: 1px solid var(--line);
+        background: #10192b;
+        border-radius: 999px;
+        padding: 10px 14px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .dot {
+        height: 8px;
+        width: 8px;
+        border-radius: 50%;
+        background: #64748b;
+      }
+      .dot.on {
+        background: #34d399;
+        box-shadow: 0 0 12px #34d39988;
+      }
+      .eyebrow {
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 1.8px;
+        font-size: 11px;
+        font-weight: 700;
+        margin: 0 0 13px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+      .card {
+        background: linear-gradient(145deg, #151f34, #101728);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        padding: 24px;
+        min-height: 210px;
+      }
+      .card-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .label {
+        color: #c2cee0;
+        font-size: 14px;
+      }
+      .symbol {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-size: 22px;
+        background: #382032;
+        color: var(--pink);
+      }
+      .blue {
+        background: #163248;
+        color: var(--blue);
+      }
+      .reading {
+        font-size: clamp(42px, 7vw, 62px);
+        font-weight: 750;
+        letter-spacing: -2px;
+        margin: 24px 0 2px;
+      }
+      .unit {
+        font-size: 16px;
+        letter-spacing: 0;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 13px;
+      }
+      .wide {
+        margin-top: 18px;
+        background: #101829;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 19px 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        flex-wrap: wrap;
+      }
+      .connection {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .wifi {
+        font-size: 22px;
+        color: var(--cyan);
+      }
+      .connection strong {
+        display: block;
+        font-size: 14px;
+      }
+      .connection small {
+        display: block;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .updated {
+        text-align: right;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+      .foot {
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1.6;
+        margin-top: 25px;
+      }
+      @media (max-width: 600px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .wide {
+          align-items: flex-start;
+        }
+        .updated {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <header>
+        <div class="brand">
+          <div class="logo">♥</div>
+          <div>
+            <h1>PulseView</h1>
+            <p class="subtitle">ESP32 · MAX30102 monitoring dashboard</p>
+          </div>
+        </div>
+        <div class="pill">
+          <span class="dot" id="dot"></span
+          ><span id="status">Waiting for device</span>
+        </div>
+      </header>
+      <p class="eyebrow">Live sensor readings</p>
+      <section class="grid">
+        <article class="card">
+          <div class="card-top">
+            <span class="label">Heart rate</span><span class="symbol">♥</span>
+          </div>
+          <div class="reading">
+            <span id="bpm">--</span> <span class="unit">BPM</span>
+          </div>
+          <div class="hint">Beats per minute · sensor estimate</div>
+        </article>
+        <article class="card">
+          <div class="card-top">
+            <span class="label">Blood oxygen</span
+            ><span class="symbol blue">◉</span>
+          </div>
+          <div class="reading">
+            <span id="spo2">--</span><span class="unit"> %</span>
+          </div>
+          <div class="hint">Estimated oxygen saturation</div>
+        </article>
+      </section>
+      <section class="wide">
+        <div class="connection">
+          <span class="wifi">⌁</span>
+          <div>
+            <strong id="device">ESP32 not connected</strong
+            ><small id="detail">Waiting for first valid sensor update</small>
+          </div>
+        </div>
+        <div class="updated">
+          Last update<br /><strong id="updated">No data received</strong>
+        </div>
+      </section>
+      <p class="foot">
+        Educational prototype only. Readings are estimates, not medical-grade
+        measurements. This starter stores readings in memory only; Vercel
+        serverless instances may not share state. Use a shared database/realtime
+        service for reliable live readings.
+      </p>
+    </main>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      async function refresh() {
+        try {
+          const r = await fetch("/api/latest", { cache: "no-store" });
+          if (!r.ok) throw Error();
+          const d = await r.json();
+          const recent =
+            d.updated_at &&
+            Date.now() - new Date(d.updated_at).getTime() < 20000;
+          $("dot").classList.toggle("on", !!recent);
+          $("status").textContent = recent
+            ? "Recent data received"
+            : "Waiting for device";
+          $("device").textContent = recent
+            ? "ESP32 sending readings"
+            : "ESP32 not connected";
+          $("detail").textContent = recent
+            ? "Latest update received"
+            : "No recent update received";
+          $("bpm").textContent = d.heart_rate ?? "--";
+          $("spo2").textContent = d.spo2 ?? "--";
+          $("updated").textContent = d.updated_at
+            ? new Date(d.updated_at).toLocaleString()
+            : "No data received";
+        } catch (e) {
+          $("status").textContent = "Server unavailable";
+          $("device").textContent = "Cannot reach API";
+        }
+      }
+      refresh();
+      setInterval(refresh, 2000);
+    </script>
+  </body>
+</html>
